@@ -167,10 +167,10 @@
                                         <th>النقاط</th>
                                         <th>السؤال</th>
                                         <th>الإجابة</th>
-                                        <th>رابط ملف السؤال</th>
-                                        <th>تحميل ملف السؤال</th>
-                                        <th>رابط ملف الإجابة</th>
-                                        <th>تحميل ملف الإجابة</th>
+                                        <th>ملف السؤال</th>
+                                        <th>رفع ملف السؤال</th>
+                                        <th>ملف الإجابة</th>
+                                        <th>رفع ملف الإجابة</th>
                                         <th>التصنيف</th>
                                         <th>الإسهم</th>
                                         <th>الملاحظات</th>
@@ -180,153 +180,101 @@
                                 <tbody>
                                     @foreach ($questionsData as $index => $data)
                                         <tr>
-                                            <!-- Display the sort order -->
                                             <td>{{ $index + 1 }}</td>
-
-                                            <!-- Form and other columns -->
                                             <form action="{{ route('import.updateRowData') }}" method="POST"
                                                 enctype="multipart/form-data">
                                                 @csrf
-                                                <!-- Identify which row is being edited -->
                                                 <input type="hidden" name="row_index" value="{{ $index }}">
 
-                                                <!-- Editable Points - Now displayed first -->
-                                                <td>
-                                                    <input type="number" name="points" class="form-control"
-                                                        value="{{ $data['points'] }}">
-                                                </td>
+                                                <!-- النقاط -->
+                                                <td><input type="number" name="points" class="form-control"
+                                                        value="{{ $data['points'] }}"></td>
 
-                                                <!-- Editable Question -->
+                                                <!-- السؤال -->
                                                 <td>
                                                     <textarea name="question" class="form-control" rows="2">{{ $data['question'] }}</textarea>
                                                 </td>
+
+                                                <!-- الإجابة -->
                                                 <td>
                                                     <textarea name="answer" class="form-control" rows="2">{{ $data['answer'] }}</textarea>
                                                 </td>
 
-                                                <!-- Question File Link Column -->
+                                                <!-- معاينة ملف السؤال -->
                                                 <td>
-                                                    @if ($data['question_link'])
-                                                        <!-- If there's already a file, show a link to preview it -->
-                                                        <a href="#" data-toggle="modal"
-                                                            data-target="#qModal{{ $index }}">
-                                                            {{ $data['question_link'] }}
-                                                        </a>
-                                                        <!-- Modal to preview the file -->
-                                                        <div class="modal fade" id="qModal{{ $index }}"
-                                                            tabindex="-1" role="dialog" aria-hidden="true">
-                                                            <div class="modal-dialog modal-dialog-centered"
-                                                                role="document">
-                                                                <div class="modal-content">
-                                                                    <div class="modal-body">
-                                                                        @php
-                                                                            $tempPath = session('import_temp_path');
-                                                                            $folderName = basename($tempPath);
-                                                                            $link = asset(
-                                                                                '/temp/' .
-                                                                                    $folderName .
-                                                                                    '/files/' .
-                                                                                    $data['question_link'],
-                                                                            );
-                                                                        @endphp
-                                                                        <p>تجربة الصوره</p>
-                                                                        <img src="{{ $link }}" class="img-fluid"
-                                                                            alt="Preview">
-                                                                        <br>
-                                                                        {{-- <p>تجربة الفديو</p> --}}
-                                                                        <video controls class="img-fluid">
-                                                                            <source src="{{ $link }}">
-                                                                            Your browser does not support the video tag.
-                                                                        </video>
-                                                                        {{-- <br> --}}
-                                                                        {{-- <p>تجربة الصوت</p>
-                                                                        <audio controls class="w-100">
-                                                                            <source src="{{ $link }}">
-                                                                            Your browser does not support the audio
-                                                                            element.
-                                                                        </audio> --}}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @else
-                                                        <span class="text-muted">لا يوجد ملف</span>
-                                                    @endif
+                                                    <div id="qPreviewContainer{{ $index }}"
+                                                        style="width:50px; height:50px; border-radius:50%; border:2px solid #28a745; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;">
+                                                        <i class="fas fa-plus"></i>
+                                                    </div>
                                                 </td>
 
-                                                <!-- Question File Upload Column -->
+                                                <!-- رفع ملف السؤال -->
                                                 <td>
-                                                    <input type="file" name="question_file" class="form-control-file">
-                                                    @if ($data['question_link'])
-                                                        <small class="text-muted d-block">سيتم استبدال الملف الحالي</small>
-                                                    @endif
+                                                    <input type="file" name="question_file"
+                                                        class="form-control-file mt-1"
+                                                        onchange="previewFile(this,'qPreviewContainer{{ $index }}')">
                                                 </td>
 
-                                                <!-- Answer File Link Column -->
+                                                <!-- معاينة ملف الإجابة -->
                                                 <td>
-                                                    @if ($data['answer_link'])
-                                                        <a href="#" data-toggle="modal"
-                                                            data-target="#aModal{{ $index }}">
-                                                            {{ $data['answer_link'] }}
-                                                        </a>
-                                                        <div class="modal fade" id="aModal{{ $index }}"
-                                                            tabindex="-1" role="dialog" aria-hidden="true">
-                                                            <div class="modal-dialog modal-dialog-centered"
-                                                                role="document">
-                                                                <div class="modal-content">
-                                                                    <div class="modal-body">
-                                                                        @php
-                                                                            $tempPath = session('import_temp_path');
-                                                                            $folderName = basename($tempPath);
-                                                                            $link = asset(
-                                                                                '/temp/' .
-                                                                                    $folderName .
-                                                                                    '/files/' .
-                                                                                    $data['answer_link'],
-                                                                            );
-                                                                        @endphp
-                                                                        <p>تجربة الصوره</p>
-                                                                        <img src="{{ $link }}" class="img-fluid"
-                                                                            alt="Preview">
-                                                                        <br>
-                                                                        {{-- <p>تجربة الفديو</p> --}}
-                                                                        <video controls class="img-fluid">
-                                                                            <source src="{{ $link }}">
-                                                                            Your browser does not support the video tag.
-                                                                        </video>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    @else
-                                                        <span class="text-muted">لا يوجد ملف</span>
-                                                    @endif
+                                                    <div id="aPreviewContainer{{ $index }}"
+                                                        style="width:50px; height:50px; border-radius:50%; border:2px solid #28a745; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;">
+                                                        <i class="fas fa-plus"></i>
+                                                    </div>
                                                 </td>
 
-                                                <!-- Answer File Upload Column -->
+                                                <!-- رفع ملف الإجابة -->
                                                 <td>
-                                                    <input type="file" name="answer_file" class="form-control-file">
-                                                    @if ($data['answer_link'])
-                                                        <small class="text-muted d-block">سيتم استبدال الملف الحالي</small>
-                                                    @endif
+                                                    <input type="file" name="answer_file"
+                                                        class="form-control-file mt-1"
+                                                        onchange="previewFile(this,'aPreviewContainer{{ $index }}')">
                                                 </td>
-                                                <!-- Category (not editable, or you can make it editable if you wish) -->
+
+                                                <!-- التصنيف -->
                                                 <td>{{ $data['categ'] ?? '—' }}</td>
-                                               <td>
+
+                                                <!-- الإسهم -->
+                                                <td>
                                                     <textarea name="direction" class="form-control" rows="2">{{ $data['direction'] }}</textarea>
                                                 </td>
-                                               <td>
+
+                                                <!-- الملاحظات -->
+                                                <td>
                                                     <textarea name="notes" class="form-control" rows="2">{{ $data['notes'] }}</textarea>
                                                 </td>
-                                                <!-- Save Button -->
-                                                <td>
-                                                    <button type="submit" class="btn btn-success btn-sm">حفظ</button>
+
+                                                <!-- حفظ التعديلات -->
+                                                <td><button type="submit" class="btn btn-success btn-sm">حفظ</button>
                                                 </td>
                                             </form>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
+
+
+                            <!-- زر حفظ الكل -->
+                            <div class="mt-3">
+                                <button class="btn btn-primary" onclick="saveAllRows()">حفظ الكل</button>
+                            </div>
+
+                            <div class="modal fade" id="dynamicModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered" role="document">
+                                    <div class="modal-content position-relative">
+                                        <!-- زر التحميل فوق المحتوى -->
+                                        <a href="#" id="dynamicDownloadBtn" download
+                                            class="btn btn-light btn-sm position-absolute"
+                                            style="top:10px; left:10px; z-index:10; border-radius:50%;">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <div class="modal-body text-center" id="dynamicModalBody">
+                                            <!-- سيتم تحديث المحتوى ديناميكياً -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
                         </div>
                     </div>
                 </div>
@@ -376,7 +324,142 @@
         // });
     </script>
 
+    <script>
+        function previewFile(input, containerId) {
+            const file = input.files[0];
+            if (!file) return;
 
+            const container = document.getElementById(containerId);
+            const url = URL.createObjectURL(file);
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            let iconHtml = '';
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                iconHtml = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                iconHtml = `<i class="fas fa-video"></i>`;
+            } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
+                iconHtml = `<i class="fas fa-microphone"></i>`;
+            } else {
+                iconHtml = `<i class="fas fa-file"></i>`;
+            }
+
+            container.innerHTML =
+                `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;" onclick="openModal('${url}', '${file.name}')">${iconHtml}</div>`;
+        }
+
+        function openModal(url, filename) {
+            const modalBody = document.getElementById('dynamicModalBody');
+            const downloadBtn = document.getElementById('dynamicDownloadBtn');
+
+            const ext = filename.split('.').pop().toLowerCase();
+            let content = '';
+
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                content = `<img src="${url}" class="img-fluid">`;
+            } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                content = `<video controls class="img-fluid"><source src="${url}"></video>`;
+            } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
+                content = `<audio controls class="w-100"><source src="${url}"></audio>`;
+            } else {
+                content = `<p>ملف غير مدعوم للمعاينة</p>`;
+            }
+
+            modalBody.innerHTML = content;
+            downloadBtn.href = url;
+            downloadBtn.download = filename;
+
+            $('#dynamicModal').modal('show');
+        }
+
+
+
+
+
+        // حفظ صف واحد
+        function saveSingleRow(index) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.enctype = 'multipart/form-data';
+            form.action = '{{ route('import.updateRowData') }}';
+            form.innerHTML = '@csrf';
+
+            const rowIndex = document.createElement('input');
+            rowIndex.type = 'hidden';
+            rowIndex.name = 'row_index';
+            rowIndex.value = index;
+            form.appendChild(rowIndex);
+
+            ['points', 'question', 'answer', 'question_file', 'answer_file', 'direction', 'notes'].forEach(name => {
+                const el = document.querySelector(`[name="${name}[${index}]"]`);
+                if (el) {
+                    if (el.type === 'file' && el.files.length > 0) {
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(el.files[0]);
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.name = name;
+                        input.files = dataTransfer.files;
+                        form.appendChild(input);
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = name;
+                        input.value = el.value;
+                        form.appendChild(input);
+                    }
+                }
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // حفظ كل الصفوف
+      function saveAllRows() {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.enctype = 'multipart/form-data';
+    form.action = '{{ route("import.updateAllRows") }}';
+    form.innerHTML = '@csrf';
+
+    const rows = document.querySelectorAll('#previewTable tbody tr');
+
+    rows.forEach((row, i) => {
+        // حقول النصوص
+        ['points','question','answer','direction','notes'].forEach(name => {
+            const el = row.querySelector(`[name="${name}"]`);
+            if(el){
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `${name}[${i}]`;
+                input.value = el.value;
+                form.appendChild(input);
+            }
+        });
+
+        // الملفات
+        ['question_file','answer_file'].forEach(name => {
+            const fileInput = row.querySelector(`[name="${name}"]`);
+            if(fileInput && fileInput.files.length > 0){
+                const dataTransfer = new DataTransfer();
+                for(let f=0; f<fileInput.files.length; f++){
+                    dataTransfer.items.add(fileInput.files[f]);
+                }
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.name = `${name}[${i}]`;
+                input.files = dataTransfer.files;
+                form.appendChild(input);
+            }
+        });
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+
+        }
+    </script>
     <!-- Internal Data tables -->
     <script src="{{ URL::asset('assets/js/modal.js') }}"></script>
     <script src="{{ URL::asset('assets/plugins/datatable/js/jquery.dataTables.min.js') }}"></script>

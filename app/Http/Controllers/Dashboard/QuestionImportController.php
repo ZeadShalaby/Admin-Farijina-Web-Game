@@ -366,57 +366,89 @@ class QuestionImportController extends Controller
     }
 
 
-    public function updateRowData(Request $request)
-    {
-        $request->validate([
-            'row_index'    => 'required|integer',
-            'question'     => 'required|string',
-            'answer'       => 'required|string',
-            'points'       => 'required|integer',
-            'question_file' => 'nullable|file',
-            'answer_file'  => 'nullable|file',
-        ]);
+  // تعديل صف واحد فقط
+public function updateRowData(Request $request)
+{
+    $request->validate([
+        'row_index'     => 'required|integer',
+        'question'      => 'required|string',
+        'answer'        => 'required|string',
+        'points'        => 'required|integer',
+        'question_file' => 'nullable|file',
+        'answer_file'   => 'nullable|file',
+    ]);
 
-        $tempPath      = session('import_temp_path');
-        $questionsData = session('questions_data');
+    $tempPath      = session('import_temp_path');
+    $questionsData = session('questions_data');
 
-        if (!$tempPath || !$questionsData) {
-            return back()->with('error', 'No import data in session.');
-        }
-
-        $rowIndex = $request->row_index;
-        if (!isset($questionsData[$rowIndex])) {
-            return back()->with('error', 'Invalid row index.');
-        }
-
-        // 1) Update text fields
-        $questionsData[$rowIndex]['question'] = $request->question;
-        $questionsData[$rowIndex]['answer']   = $request->answer;
-        $questionsData[$rowIndex]['points']   = $request->points;
-
-        // 2) If user uploaded a new question file, move it to the temp folder
-        if ($request->hasFile('question_file')) {
-            // Generate a unique filename or keep the original name
-            $qFilename = uniqid('q_') . '.' . $request->file('question_file')->getClientOriginalExtension();
-            $request->file('question_file')->move($tempPath . '/files', $qFilename);
-
-            // Overwrite the old question_link
-            $questionsData[$rowIndex]['question_link'] = $qFilename;
-        }
-
-        // 3) If user uploaded a new answer file
-        if ($request->hasFile('answer_file')) {
-            $aFilename = uniqid('a_') . '.' . $request->file('answer_file')->getClientOriginalExtension();
-            $request->file('answer_file')->move($tempPath . '/files', $aFilename);
-
-            $questionsData[$rowIndex]['answer_link'] = $aFilename;
-        }
-
-        // 4) Save updated data back to session
-        session(['questions_data' => $questionsData]);
-
-        return back()->with('success', 'تم تعديل السؤال/الإجابة والملفات بنجاح.');
+    if (!$tempPath || !$questionsData) {
+        return back()->with('error', 'No import data in session.');
     }
+
+    $rowIndex = $request->row_index;
+    if (!isset($questionsData[$rowIndex])) {
+        return back()->with('error', 'Invalid row index.');
+    }
+
+    // تحديث النصوص
+    $questionsData[$rowIndex]['question'] = $request->question;
+    $questionsData[$rowIndex]['answer']   = $request->answer;
+    $questionsData[$rowIndex]['points']   = $request->points;
+
+    // رفع ملفات جديدة
+    if ($request->hasFile('question_file')) {
+        $qFilename = uniqid('q_') . '.' . $request->file('question_file')->getClientOriginalExtension();
+        $request->file('question_file')->move($tempPath . '/files', $qFilename);
+        $questionsData[$rowIndex]['question_link'] = $qFilename;
+    }
+
+    if ($request->hasFile('answer_file')) {
+        $aFilename = uniqid('a_') . '.' . $request->file('answer_file')->getClientOriginalExtension();
+        $request->file('answer_file')->move($tempPath . '/files', $aFilename);
+        $questionsData[$rowIndex]['answer_link'] = $aFilename;
+    }
+
+    session(['questions_data' => $questionsData]);
+    return back()->with('success', 'تم تعديل السؤال/الإجابة والملفات بنجاح.');
+}
+
+// تعديل كل الصفوف دفعة واحدة
+public function updateAllRows(Request $request)
+{
+    $questionsData = session('questions_data');
+    $tempPath      = session('import_temp_path');
+
+    if (!$questionsData || !$tempPath) {
+        return back()->with('error', 'No import data in session.');
+    }
+
+    foreach ($questionsData as $index => &$data) {
+        // تحديث النصوص
+        $data['points']    = $request->input("points.$index");
+        $data['question']  = $request->input("question.$index");
+        $data['answer']    = $request->input("answer.$index");
+        $data['direction'] = $request->input("direction.$index");
+        $data['notes']     = $request->input("notes.$index");
+
+        // رفع ملفات جديدة إذا وجدت
+        if ($request->hasFile("question_file.$index")) {
+            $file = $request->file("question_file.$index");
+            $filename = uniqid('q_') . '.' . $file->getClientOriginalExtension();
+            $file->move($tempPath . '/files', $filename);
+            $data['question_link'] = $filename;
+        }
+
+        if ($request->hasFile("answer_file.$index")) {
+            $file = $request->file("answer_file.$index");
+            $filename = uniqid('a_') . '.' . $file->getClientOriginalExtension();
+            $file->move($tempPath . '/files', $filename);
+            $data['answer_link'] = $filename;
+        }
+    }
+
+    session(['questions_data' => $questionsData]);
+    return back()->with('success', 'تم تعديل جميع الصفوف بنجاح.');
+}
 
 
 

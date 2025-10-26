@@ -184,7 +184,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('import/preview-file/{filename}', [QuestionImportController::class, 'previewFile'])->name('import.previewFile');
     Route::post('import/upload-file', [QuestionImportController::class, 'uploadFileForRow'])->name('import.uploadFileForRow');
     Route::post('import/update-row', [QuestionImportController::class, 'updateRowData'])->name('import.updateRowData');
+    Route::post('import/update-all-row', [QuestionImportController::class, 'updateAllRows'])->name('import.updateAllRows');
 
+    
     Route::post('import/upload', [QuestionImportController::class, 'uploadAndPreview'])->name('import.upload');
     // Page to show the preview (the view 'import.preview' should be created by you)
     Route::get('import/index', function () {
