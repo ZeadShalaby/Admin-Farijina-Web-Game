@@ -11,21 +11,22 @@ use App\Models\Question;
 use App\Models\ContactUs;
 use App\Models\CouponUsage;
 use App\Models\Transaction;
-use App\Http\Controllers\Controller;
-use App\Models\TempUserQuestionView;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use App\Models\TempUserQuestionView;
+use BaconQrCode\Renderer\ImageRenderer;
+use Laravel\Sanctum\PersonalAccessToken;
 use Illuminate\Support\Facades\Validator;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 
 
 class QuestionController extends Controller
 {
-      use \App\Traits\ImageProcessing;
+    use \App\Traits\ImageProcessing;
 
     public function show(Request $request)
     {
@@ -179,7 +180,7 @@ class QuestionController extends Controller
             'question_id' => $question->id,
             'category_id' => $categoryId
         ]);
-      
+
         $question['request'] = $request->all();
         return successResponse($question);
     }
@@ -238,8 +239,8 @@ class QuestionController extends Controller
 
         return response()->json(['message' => 'Question view stored successfully'], 201);
     }
-  
-      public function main()
+
+    public function main()
     {
         try {
             // Basic Counts
@@ -461,15 +462,37 @@ class QuestionController extends Controller
         }
 
     }
-  
-  
-      public function categories(Request $request)
+
+
+    public function categories(Request $request)
     {
         try {
-            $categories = Category::where('is_active', 1)->paginate(10);
-            return response()->json(['status' => true, 'data' => $categories]);
+            $user = $request->user();
+         
+            // جلب كل الـ Permissions اللي guard_name = 'categories'
+            $categoryPermissions = $user->getAllPermissions()
+                ->where('guard_name', 'web')
+                ->where('group', 'categories')
+                ->pluck('name') // ناخد أسماء الفئات فقط
+                ->toArray();
+
+
+            // جلب الفئات اللي عنده صلاحية عليها فقط
+            $categories = Category::where('is_active', 1)
+                ->whereIn('title', $categoryPermissions)
+                ->paginate(10);
+
+
+            return response()->json([
+                'status' => true,
+                'data' => $categories
+            ]);
+
         } catch (\Exception $e) {
-            return response()->json(['status' => false, 'message' => 'حدث خطأ غير متوقع'], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'حدث خطأ غير متوقع'
+            ], 500);
         }
     }
     public function storeQuestion(Request $request)
@@ -547,8 +570,8 @@ class QuestionController extends Controller
             ], 500);
         }
     }
-  
-      public function qrCode(Request $request)
+
+    public function qrCode(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
@@ -609,5 +632,5 @@ class QuestionController extends Controller
     }
 
 
-   
+
 }

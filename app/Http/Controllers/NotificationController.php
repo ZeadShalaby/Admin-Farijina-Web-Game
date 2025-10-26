@@ -51,6 +51,7 @@ class NotificationController extends Controller
 
     public function sendNotificationToUser(Request $request)
     {
+        // dd($request->all());
         $messageFromAdmin = $request->message;
         $titleFromAdmin = $request->title;
         $userId = $request->user_id;

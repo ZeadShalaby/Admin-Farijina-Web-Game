@@ -80,10 +80,10 @@ Route::group(
     },
 );
 
-
-Route::get('/analytics/app', [QuestionController::class, 'main']);
-Route::get('/categories/app', [QuestionController::class, 'categories']);
-Route::post('/questions/storeQuestion', [QuestionController::class, 'storeQuestion']);
-
+      Route::middleware(['sanctum','SanctumTokenUser'])->group( function() {
+        Route::get('/analytics/app', [QuestionController::class, 'main']);
+        Route::get('/categories/app', [QuestionController::class, 'categories']);
+        Route::post('/questions/storeQuestion', [QuestionController::class, 'storeQuestion']);
+      });
 
 

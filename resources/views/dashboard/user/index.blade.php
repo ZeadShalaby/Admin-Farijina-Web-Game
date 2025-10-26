@@ -145,9 +145,6 @@
                                         <td>
                                             <div class="d-flex">
 
-
-
-
                                                 <button class="btn btn-outline-danger btn-sm ml-2"
                                                     data-pro_id="{{ $user->id }}" data-name="{{ $user->name }}"
                                                     data-toggle="modal" data-target="#exampleModal00">ارسال اشعار
@@ -158,6 +155,13 @@
                                                     data-note="{{ $user->note }}" data-toggle="modal"
                                                     data-target="#exampleModal2">ملحوظه
                                                 </button>
+                                                <button class="btn btn-outline-primary btn-sm ml-2"
+                                                    data-user-id="{{ $user->id }}" data-name="{{ $user->name }}"
+                                                    data-user-role="{{ $user->roles->first()->name ?? '' }}"
+                                                    data-toggle="modal" data-target="#addRoleModal">
+                                                    إضافة دور
+                                                </button>
+
 
 
                                                 {{-- <form action="{{ route('userUpdate', $user->id) }}">
@@ -267,6 +271,48 @@
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
                         </div>
 
+                    </form>
+
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Add Role -->
+        <div class="modal fade" id="addRoleModal" tabindex="-1" role="dialog" aria-labelledby="addRoleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addRoleModalLabel">إضافة دور للمستخدم</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <form action="{{ route('rules.assignRole') }}" method="POST">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="userName">اسم المستخدم</label>
+                                <input type="text" id="userName" name="name" class="form-control" readonly>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ruleSelect">اختر الدور</label>
+                                <select name="rule" id="ruleSelect" class="form-control" required>
+                                    <option value="" disabled selected>-- اختر الدور --</option>
+                                </select>
+                            </div>
+
+                            <input type="hidden" id="user_id_role" name="user_id" value="">
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-success">تأكيد</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+                        </div>
                     </form>
 
 
@@ -386,6 +432,7 @@
                 </div>
             </div>
         </div>
+        <!-- note -->
         <div class="modal fade" id="exampleModal2" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -420,6 +467,7 @@
                 </div>
             </div>
         </div>
+        <!-- delete -->
         <div class="modal fade" id="modaldemo9" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -446,6 +494,7 @@
                 </div>
             </div>
         </div>
+        <!-- charge -->
         <div class="modal fade" id="modaldemo15" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
             aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -516,6 +565,61 @@
             }
         }
     </script>
+
+    <script>
+        $('#addRoleModal').on('show.bs.modal', function(event) {
+            var button = $(event.relatedTarget);
+            var userName = button.data('name');
+            var userId = button.data('pro_id');
+
+            var modal = $(this);
+            modal.find('#userName').val(userName);
+            modal.find('#user_id_role').val(userId);
+        });
+    </script>
+
+    <script>
+        $('#addRoleModal').on('show.bs.modal', function(e) {
+            let button = $(e.relatedTarget); // الزر اللي فتح المودال
+            let userId = button.data('user-id');
+            let userName = button.data('name'); // ✅ صححت الاسم
+            let currentRole = button.data('user-role'); // الدور الحالي للمستخدم
+
+            // نملأ بيانات المستخدم في الفورم
+            $('#userName').val(userName);
+            $('#user_id_role').val(userId);
+
+            // تجهيز السيلكت
+            let roleSelect = $('#ruleSelect');
+            roleSelect.empty().append('<option value="" disabled>-- اختر الدور --</option>');
+
+            // نجيب الأدوار من السيرفر
+            $.ajax({
+                url: "{{ route('rules.list') }}",
+                type: "GET",
+                success: function(response) {
+                    response.data.forEach(rule => {
+                        let selected = (rule.name === currentRole) ? 'selected' : '';
+                        roleSelect.append(
+                            `<option value="${rule.name}" ${selected}>${rule.name}</option>`
+                        );
+                    });
+
+                    // لو مفيش دور حالي، نخلي الافتراضي هو "اختر الدور"
+                    if (!currentRole) {
+                        roleSelect.prepend(
+                            '<option value="" disabled selected>-- اختر الدور --</option>'
+                        );
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Error fetching roles:", xhr);
+                }
+            });
+        });
+    </script>
+
+
     <script src="{{ URL::asset('assets/plugins/jquery-ui/ui/widgets/datepicker.js') }}"></script>
     <!-- Internal Select2 js-->
     <script src="{{ URL::asset('assets/plugins/select2/js/select2.min.js') }}"></script>

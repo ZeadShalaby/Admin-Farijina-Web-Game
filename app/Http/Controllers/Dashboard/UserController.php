@@ -16,7 +16,7 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $userdata = User::all();
+        $userdata = User::paginate(50);
 
         // return  $userdata;
         $roles = Role::all();

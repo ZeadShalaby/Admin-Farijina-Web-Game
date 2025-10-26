@@ -102,6 +102,7 @@ class RulesController extends Controller
     // ?todo update role permissions
     public function update(Request $request, $roleId)
     {
+        // dd($request->all());
         $role = Role::findOrFail($roleId);
 
         $permissions = Permission::whereIn('id', $request->permissions ?? [])->get();
@@ -125,6 +126,29 @@ class RulesController extends Controller
         session()->flash('delete', 'تم حذف الدور بنجاح');
 
         return redirect()->route('rules.index');
+    }
+
+
+    public function rules()
+    {
+        $rules = Role::paginate(10);
+
+        return response()->json($rules);
+    }
+
+
+    public function assignRole(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'rule' => 'required|string|exists:roles,name',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+        $user->syncRoles([$request->rule]);
+        session()->flash('Add', 'تم تعيين الدور بنجاح');
+
+        return back()->with('success', 'تم تعيين الدور بنجاح');
     }
 
 

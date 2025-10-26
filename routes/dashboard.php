@@ -1,17 +1,21 @@
 <?php
 
+use Illuminate\Http\Request;
+use App\Exports\CouponsExport;
+use App\Enums\CategoryFilterMode;
+use App\Models\AdminLoginHistory;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Dashboard\RoleController;
 use App\Http\Controllers\Dashboard\UserController;
+use App\Http\Controllers\Dashboard\RulesController;
 use App\Http\Controllers\Dashboard\SkillController;
 use App\Http\Controllers\Dashboard\BannerController;
 use App\Http\Controllers\Dashboard\CouponController;
 use App\Http\Controllers\Dashboard\VendorController;
 use App\Http\Controllers\Dashboard\CompanyController;
-use App\Http\Controllers\Dashboard\AdminLoginHistoryController;
 use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\CategoryController;
 use App\Http\Controllers\Dashboard\QuestionController;
@@ -23,24 +27,21 @@ use App\Http\Controllers\Dashboard\PaymentGatewayController;
 use App\Http\Controllers\Dashboard\QuestionHorrorController;
 use App\Http\Controllers\Dashboard\QuestionImportController;
 use App\Http\Controllers\Dashboard\UserTransactionController;
-use App\Exports\CouponsExport;
-use Illuminate\Http\Request;
-use App\Models\AdminLoginHistory;
-use App\Enums\CategoryFilterMode;
+use App\Http\Controllers\Dashboard\AdminLoginHistoryController;
 
 
 Route::group(['middleware' => ['auth']], function () {
-  
- Route::post('/logout', function (Request $request) {
-         
+
+    Route::post('/logout', function (Request $request) {
+
         // ? Log The Logout Time
         AdminLoginHistory::logLogout(session()->getId());
-   
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect('/login');
     })->name('logout');
 
@@ -76,7 +77,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/coupons/update', 'update')->name('coupons.update');
         Route::post('/coupons/destroy', 'destroy')->name('coupons.destroy');
     });
-  
+
     Route::controller(AdminLoginHistoryController::class)->group(function () {
         Route::get('/login-history', 'index')->name('login.history');
     });
@@ -113,14 +114,14 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/category/{categoryId}/questions', [CategoryController::class, 'showCategoryQuestions'])->name('categories.show');
     Route::post('/categories/update-position', [CategoryController::class, 'reorder'])->name('categories.reorder');
-    Route::get('/categories/sort',[CategoryController::class,'showSort'])->name('categories.sort');
+    Route::get('/categories/sort', [CategoryController::class, 'showSort'])->name('categories.sort');
     Route::get('/categories/no-words/{mode}', [CategoryController::class, 'noWordCategory'])
-      ->whereIn('mode', [
-        CategoryFilterMode::DEFAULT->value,
-        CategoryFilterMode::MEDIUM->value,
-        CategoryFilterMode::SPECIAL->value
-      ])
-      ->name('categories.noWordCategory');
+        ->whereIn('mode', [
+            CategoryFilterMode::DEFAULT ->value,
+            CategoryFilterMode::MEDIUM->value,
+            CategoryFilterMode::SPECIAL->value
+        ])
+        ->name('categories.noWordCategory');
     Route::resource('categories', CategoryController::class);
     Route::post('/categories/import', [CategoryController::class, 'import'])->name('categories.import');
     Route::post('/questions/import', [QuestionController::class, 'import'])->name('questions.import');
@@ -194,17 +195,20 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('import/confirm', [QuestionImportController::class, 'confirmImport'])->name('import.confirm');
     Route::post('import/cancel', [QuestionImportController::class, 'cancelImport'])->name('import.cancel');
     Route::get('import/download', [QuestionImportController::class, 'downloadUpdatedExcel'])->name('import.download');
-    
+
     Route::controller(RulesController::class)->group(function () {
-      Route::get('/rules', 'index')->name('rules.index');
-      Route::post('/rules/store', 'store')->name('rules.store');
-      Route::get('/rules/{id}', 'show')->name('rules.show');
-      Route::delete('/rules/delete', 'destroy')->name('rules.destroy');
-      Route::put('/rules/{roleId}/update', 'update')->name('rules.update');
-      Route::put('/rules/updateRole', 'updateRole')->name('rules.updateRole');
-      Route::get('/rules/{id}/analysis',  'analysis');
+        Route::get('/rules', 'index')->name('rules.index');
+        Route::get('/rules/list', 'rules')->name('rules.list');
+        Route::post('/rules/store', 'store')->name('rules.store');
+        Route::get('/rules/{id}', 'show')->name('rules.show');
+        Route::delete('/rules/delete', 'destroy')->name('rules.destroy');
+        Route::put('/rules/{roleId}/update', 'update')->name('rules.update');
+        Route::put('/rules/updateRole', 'updateRole')->name('rules.updateRole');
+        Route::get('/rules/{id}/analysis', 'analysis');
+        Route::post('/assignRole', 'assignRole')->name('rules.assignRole');
+
     });
-  
+
     // A success route after confirm.
     Route::get('import/success', function () {
         return view('sucss-page.blade');
